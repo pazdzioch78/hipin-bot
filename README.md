@@ -53,7 +53,7 @@ Below is an example configuration file. Adjust the settings as needed:
 | `thread`               | Number of concurrent threads (accounts) to process     | `1`         |
 | `proxy`                | Enable/Disable proxy usage                             | `false`     |
 | `delay_account_switch` | Delay before switching accounts (in seconds)           | `10`        |
-| `delay_loop`           | Delay before restarting the bot loop (in milliseconds) | `3000`      |
+| `delay_loop`           | Delay before restarting the bot loop (in seconds) | `3000`      |
 
 ---
 
