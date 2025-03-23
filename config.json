@@ -4,8 +4,10 @@
     "daily": true,
     "thread": 1,
     "proxy": true,
-    "delay_account_switch_min": 5,
-    "delay_account_switch_max": 15,
-    "delay_loop_min": 2000,
-    "delay_loop_max": 4000
+    "delay_account_switch_min": 15,
+    "delay_account_switch_max": 54,
+    "delay_loop_min": 7498,
+    "delay_loop_max": 9301,
+    "delay_task_min": 5,
+    "delay_task_max": 15
 }
