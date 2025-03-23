@@ -539,7 +539,8 @@ async def process_account(account, original_index, account_label, hip, config):
         "farming": "Automatic farming for abundant harvest 🌾",
     }
 
-    for task_key, task_name in tasks_config.items():
+    task_keys = list(tasks_config.keys())
+    for i, (task_key, task_name) in enumerate(tasks_config.items()):
         task_status = config.get(task_key, False)
         color = Fore.YELLOW if task_status else Fore.RED
         hip.log(
@@ -549,10 +550,19 @@ async def process_account(account, original_index, account_label, hip, config):
         if task_status:
             hip.log(f"🔄 Executing {task_name}...", Fore.CYAN)
             await asyncio.to_thread(getattr(hip, task_key))
+            
+            # Dodaj opoznienie miedzy zadaniami, ale tylko jesli to nie jest ostatnie zadanie
+            if i < len(task_keys) - 1:
+                task_min_delay = config.get("delay_task_min", 5)
+                task_max_delay = config.get("delay_task_max", 15)
+                task_delay = random.randint(task_min_delay, task_max_delay)
+                hip.log(f"⏳ Czekam {task_delay} sekund przed nastepnym zadaniem...", Fore.CYAN)
+                await asyncio.sleep(task_delay)
 
-            min_delay = config.get("delay_account_switch_min", 5)
-            max_delay = config.get("delay_account_switch_max", 15)
-            delay_switch = random.randint(min_delay, max_delay)
+    # Opoznienie przed przelaczeniem konta pozostaje bez zmian
+    min_delay = config.get("delay_account_switch_min", 15)
+    max_delay = config.get("delay_account_switch_max", 54)
+    delay_switch = random.randint(min_delay, max_delay)
     hip.log(
         f"➡️ Finished processing {account_label}. Waiting {Fore.WHITE}{delay_switch}{Fore.CYAN} seconds before next account.",
         Fore.CYAN,
@@ -612,8 +622,8 @@ async def main():
             w.cancel()
 
         hip.log("🔁 All accounts processed. Restarting loop.", Fore.CYAN)
-        min_loop_delay = config.get("delay_loop_min", 2000)
-        max_loop_delay = config.get("delay_loop_max", 4000)
+        min_loop_delay = config.get("delay_loop_min", 7498)
+        max_loop_delay = config.get("delay_loop_max", 9301)
         delay_loop = random.randint(min_loop_delay, max_loop_delay)
         hip.log(
             f"⏳ Sleeping for {Fore.WHITE}{delay_loop}{Fore.CYAN} seconds before restarting.",
