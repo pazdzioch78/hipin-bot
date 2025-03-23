@@ -13,6 +13,7 @@ Hipin Bot is a smart automation tool designed to simplify your gaming experience
 - **Auto Daily Check-in:** Automatically claim your daily rewards.
 - **Auto Task Execution:** Run available tasks and collect rewards without manual effort.
 - **Auto Farming:** Manage your farming sessions and claim rewards seamlessly.
+- **Auto Level Up:** Automatically upgrade your model when level-up requirements are met.
 
 Additional benefits include:
 
@@ -23,9 +24,12 @@ Additional benefits include:
 
 ---
 
-## 🌟 Version v1.0.0
+## 🌟 Version v1.0.1
 
-### Initial Release
+### Updates
+
+1. **Added Auto Level Up System:**  
+   The bot now automatically checks your level-up requirements and upgrades your model when the criteria are met.
 
 ---
 
@@ -45,15 +49,15 @@ Below is an example configuration file. Adjust the settings as needed:
 }
 ```
 
-| **Function**           | **Description**                                        | **Default** |
-| ---------------------- | ------------------------------------------------------ | ----------- |
-| `farming`              | Automate farming sessions and reward claims            | `true`      |
-| `task`                 | Automate task execution and reward claims              | `true`      |
-| `daily`                | Automate daily check-in and claim rewards              | `true`      |
-| `thread`               | Number of concurrent threads (accounts) to process     | `1`         |
-| `proxy`                | Enable/Disable proxy usage                             | `false`     |
-| `delay_account_switch` | Delay before switching accounts (in seconds)           | `10`        |
-| `delay_loop`           | Delay before restarting the bot loop (in seconds) | `3000`      |
+| **Function**           | **Description**                                    | **Default** |
+| ---------------------- | -------------------------------------------------- | ----------- |
+| `farming`              | Automate farming sessions and reward claims        | `true`      |
+| `task`                 | Automate task execution and reward claims          | `true`      |
+| `daily`                | Automate daily check-in and claim rewards          | `true`      |
+| `thread`               | Number of concurrent threads (accounts) to process | `1`         |
+| `proxy`                | Enable/Disable proxy usage                         | `false`     |
+| `delay_account_switch` | Delay before switching accounts (in seconds)       | `10`        |
+| `delay_loop`           | Delay before restarting the bot loop (in seconds)  | `3000`      |
 
 ---
 
@@ -118,10 +122,15 @@ Get started with Hipin Bot by registering through the link below:
 - **Auto Daily Check-in:** Claim your daily rewards automatically.
 - **Auto Task Execution:** Run tasks and claim rewards without any manual effort.
 - **Auto Farming:** Manage your farming sessions and collect rewards seamlessly.
+- **Auto Level Up:** Upgrade your model automatically when requirements are met.
 - **Multi-Account Support:** Process multiple accounts concurrently.
 - **Threading System:** Use configurable threading to run accounts in parallel.
 - **Proxy Support:** Optionally enhance security with proxy usage.
 - **Custom Delays:** Adjust delay intervals for account switching and bot looping.
+
+---
+
+### 🔹 Want Free Proxies? You can obtain free proxies from [Webshare.io](https://www.webshare.io/).
 
 ---
 

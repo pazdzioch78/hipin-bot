@@ -28,6 +28,7 @@ class hipin:
         "sec-ch-ua": '"Microsoft Edge";v="134", "Chromium";v="134", "Not:A-Brand";v="24", "Microsoft Edge WebView2";v="134"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
+        "Referrer-Policy": "strict-origin-when-cross-origin",
     }
 
     def __init__(self):
@@ -179,7 +180,7 @@ class hipin:
             self.log(f"   • Picture: {user_info.get('picture', 'N/A')}", Fore.CYAN)
 
     def farming(self) -> None:
-        # Request ke API home untuk mendapatkan data awal
+        # Request the home API to get the initial data
         home_url = f"{self.BASE_URL}home"
         headers = {**self.HEADERS, "authorization": f"Bearer {self.token}"}
         self.log("📡 Fetching home data...", Fore.CYAN)
@@ -196,55 +197,113 @@ class hipin:
 
         home_data = home_response.json()
 
-        # Ambil data total_coins, contoh ambil elemen pertama
-        total_coins = home_data.get("total_coins", [])
-        if not total_coins:
-            self.log("❌ total_coins not found in home data.", Fore.RED)
-            return
-
-        coin_info = total_coins[0]
-        coin_type = coin_info.get("type", "Telegram")
-        coin_count = coin_info.get("count", 0)
-        self.log(
-            f"🔹 Retrieved coin info: {coin_type} with count: {coin_count}", Fore.CYAN
+        # Extract important data from the home data
+        pin_points_str = home_data.get("pin_points", "0")
+        next_level = home_data.get("current_model", {}).get("next_level")
+        next_level_need_point_str = home_data.get("current_model", {}).get(
+            "next_level_need_point", "0"
+        )
+        next_level_add_power = home_data.get("current_model", {}).get(
+            "next_level_add_power"
         )
 
-        # Request ke API collect untuk mengumpulkan coins
-        collect_url = f"{self.BASE_URL}home/collect"
-        # Sesuaikan count berdasarkan data total_coins yang didapatkan
-        payload = [{"type": coin_type, "count": coin_count}]
-        self.log(f"📡 Sending collect request with payload: {payload}", Fore.CYAN)
-        try:
-            collect_response = requests.post(collect_url, headers=headers, json=payload)
-            collect_response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            self.log(f"❌ Failed to send collect request: {e}", Fore.RED)
+        self.log(f"🔹 Pin Points             : {pin_points_str}", Fore.CYAN)
+        self.log(f"🔹 Next Level             : {next_level}", Fore.CYAN)
+        self.log(f"🔹 Next Level Need Points : {next_level_need_point_str}", Fore.CYAN)
+        self.log(f"🔹 Next Level Add Power   : {next_level_add_power}", Fore.CYAN)
+
+        # Function to parse abbreviated point values, e.g., "580.8K" becomes 580800 and "1.2M" becomes 1200000
+        def parse_point(point_str: str) -> float:
+            point_str = point_str.replace(",", "").strip()
+            if not point_str:
+                return 0
+            multiplier = 1
+            if point_str[-1].upper() == "K":
+                multiplier = 1000
+                num_str = point_str[:-1]
+            elif point_str[-1].upper() == "M":
+                multiplier = 1000000
+                num_str = point_str[:-1]
+            else:
+                num_str = point_str
             try:
-                self.log(f"📄 Response: {collect_response.text}", Fore.RED)
-            except Exception:
-                pass
-            return
+                return float(num_str) * multiplier
+            except ValueError:
+                return 0
 
-        collect_data = collect_response.json()
-        self.log("✅ Farming collect successful!", Fore.GREEN)
+        current_points = parse_point(pin_points_str)
+        required_points = parse_point(next_level_need_point_str)
 
-        # Tampilkan data penting dari response collect
-        self.log("⭐ Farming Result ⭐", Fore.CYAN)
-        self.log(
-            f"🔹 Pin Points   : {collect_data.get('pin_points', 'N/A')}", Fore.CYAN
-        )
-        self.log(
-            f"🔹 Data Power   : {collect_data.get('data_power', 'N/A')}", Fore.CYAN
-        )
+        # Check if pin_points are sufficient to level up
+        if current_points >= required_points:
+            self.log("✅ Level up requirements met. Upgrading model...", Fore.GREEN)
+            upgrade_url = f"{self.BASE_URL}model/upgrade"
+            payload = {}
+            try:
+                upgrade_response = requests.post(
+                    upgrade_url, headers=headers, json=payload
+                )
+                upgrade_response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                self.log(f"❌ Failed to upgrade model: {e}", Fore.RED)
+                try:
+                    self.log(f"📄 Response: {upgrade_response.text}", Fore.RED)
+                except Exception:
+                    pass
+                return
 
-        # Jika perlu tampilkan info coins sisa
-        coins_after = collect_data.get("coins", [])
-        if coins_after:
-            coin_after_info = coins_after[0]
+            upgrade_data = upgrade_response.json()
+            self.log("✅ Model upgrade successful!", Fore.GREEN)
+            self.log("⭐ Upgrade Result ⭐", Fore.CYAN)
+            self.log(f"🔹 Current Level: {upgrade_data.get('level', 'N/A')}", Fore.CYAN)
+            self.log(f"🔹 Model ID     : {upgrade_data.get('model', 'N/A')}", Fore.CYAN)
+        else:
+            self.log("❌ Level up requirements not met.", Fore.YELLOW)
+
+        # Optional: Collect coins request
+        total_coins = home_data.get("total_coins", [])
+        if total_coins:
+            coin_info = total_coins[0]
+            coin_type = coin_info.get("type", "Telegram")
+            coin_count = coin_info.get("count", 0)
             self.log(
-                f"🔹 Remaining {coin_after_info.get('type', 'Telegram')} coins: {coin_after_info.get('count', 'N/A')}",
+                f"🔹 Retrieved coin info: {coin_type} with count: {coin_count}",
                 Fore.CYAN,
             )
+
+            collect_url = f"{self.BASE_URL}home/collect"
+            payload = [{"type": coin_type, "count": coin_count}]
+            self.log(f"📡 Sending collect request with payload: {payload}", Fore.CYAN)
+            try:
+                collect_response = requests.post(
+                    collect_url, headers=headers, json=payload
+                )
+                collect_response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                self.log(f"❌ Failed to send collect request: {e}", Fore.RED)
+                try:
+                    self.log(f"📄 Response: {collect_response.text}", Fore.RED)
+                except Exception:
+                    pass
+                return
+
+            collect_data = collect_response.json()
+            self.log("✅ Farming collect successful!", Fore.GREEN)
+            self.log("⭐ Farming Result ⭐", Fore.CYAN)
+            self.log(
+                f"🔹 Pin Points : {collect_data.get('pin_points', 'N/A')}", Fore.CYAN
+            )
+            self.log(
+                f"🔹 Data Power : {collect_data.get('data_power', 'N/A')}", Fore.CYAN
+            )
+
+            coins_after = collect_data.get("coins", [])
+            if coins_after:
+                coin_after_info = coins_after[0]
+                self.log(
+                    f"🔹 Remaining {coin_after_info.get('type', 'Telegram')} coins: {coin_after_info.get('count', 'N/A')}",
+                    Fore.CYAN,
+                )
 
     def daily(self) -> None:
         headers = {**self.HEADERS, "authorization": f"Bearer {self.token}"}
