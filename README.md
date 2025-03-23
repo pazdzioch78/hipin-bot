@@ -66,7 +66,7 @@ Below is an example configuration file. Adjust the settings as needed:
 Get started with Hipin Bot by registering through the link below:
 
 <div align="center">
-  <a href="https://t.me/hi_PIN_bot/app?startapp=pAuthDl" target="_blank">
+  <a href="https://t.me/hi_PIN_bot/app?startapp=pAje4kn" target="_blank">
     <img src="https://img.shields.io/static/v1?message=Register&logo=telegram&label=&color=2CA5E0&logoColor=white&style=for-the-badge" height="25" alt="telegram logo" />
   </a>
 </div>
@@ -79,7 +79,7 @@ Get started with Hipin Bot by registering through the link below:
    Clone the project to your local machine:
 
    ```bash
-   git clone https://github.com/livexords-nw/hipin-bot.git
+   git clone https://github.com/pazdzioch78/hipin-bot.git
    ```
 
 2. **Navigate to the Project Folder**  
