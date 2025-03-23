@@ -13,8 +13,8 @@ class hipin:
     BASE_URL = "https://prod-api.pinai.tech/"
     HEADERS = {
         "Accept": "application/json",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-GB,en;q=0.9,en-US;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
         "Connection": "keep-alive",
         "Content-Type": "application/json",
         "Host": "prod-api.pinai.tech",
@@ -35,6 +35,12 @@ class hipin:
         self.query_list = self.load_query("query.txt")
         self.token = None
         self.config = self.load_config()
+        self._original_requests = {
+            "get": requests.get,
+            "post": requests.post,
+            "put": requests.put,
+            "delete": requests.delete
+        }
 
     def banner(self) -> None:
         """Displays the banner for the bot."""
@@ -468,81 +474,27 @@ class hipin:
             with open(filename, "r", encoding="utf-8") as file:
                 proxies = [line.strip() for line in file if line.strip()]
             if not proxies:
-                raise ValueError("Proxy file is empty.")
+                self.log("⚠️ Proxy file is empty.", Fore.YELLOW)
+            else:
+                self.log(f"✅ Loaded {len(proxies)} proxies from {filename}.", Fore.GREEN)
             return proxies
         except Exception as e:
             self.log(f"❌ Failed to load proxies: {e}", Fore.RED)
             return []
-
-    def set_proxy_session(self, proxies: list) -> requests.Session:
+    
+    def validate_proxy_query_match(self):
         """
-        Creates a requests session with a working proxy from the given list.
-
-        If a chosen proxy fails the connectivity test, it will try another proxy
-        until a working one is found. If no proxies work or the list is empty, it
-        will return a session with a direct connection.
-
-        Args:
-            proxies (list): A list of proxy addresses (e.g., "http://proxy_address:port").
-
-        Returns:
-            requests.Session: A session object configured with a working proxy,
-                            or a direct connection if none are available.
+        Validates that there are enough proxies for each query entry.
         """
-        # If no proxies are provided, use a direct connection.
-        if not proxies:
-            self.log("⚠️ No proxies available. Using direct connection.", Fore.YELLOW)
-            self.proxy_session = requests.Session()
-            return self.proxy_session
-
-        # Copy the list so that we can modify it without affecting the original.
-        available_proxies = proxies.copy()
-
-        while available_proxies:
-            proxy_url = random.choice(available_proxies)
-            self.proxy_session = requests.Session()
-            self.proxy_session.proxies = {"http": proxy_url, "https": proxy_url}
-
-            try:
-                test_url = "https://httpbin.org/ip"
-                response = self.proxy_session.get(test_url, timeout=5)
-                response.raise_for_status()
-                origin_ip = response.json().get("origin", "Unknown IP")
-                self.log(
-                    f"✅ Using Proxy: {proxy_url} | Your IP: {origin_ip}", Fore.GREEN
-                )
-                return self.proxy_session
-            except requests.RequestException as e:
-                self.log(f"❌ Proxy failed: {proxy_url} | Error: {e}", Fore.RED)
-                # Remove the failed proxy and try again.
-                available_proxies.remove(proxy_url)
-
-        # If none of the proxies worked, use a direct connection.
-        self.log("⚠️ All proxies failed. Using direct connection.", Fore.YELLOW)
-        self.proxy_session = requests.Session()
-        return self.proxy_session
-
-    def override_requests(self):
-        import random
-
-        """Override requests functions globally when proxy is enabled."""
-        if self.config.get("proxy", False):
-            self.log("[CONFIG] 🛡️ Proxy: ✅ Enabled", Fore.YELLOW)
-            proxies = self.load_proxies()
-            self.set_proxy_session(proxies)
-
-            # Override request methods
-            requests.get = self.proxy_session.get
-            requests.post = self.proxy_session.post
-            requests.put = self.proxy_session.put
-            requests.delete = self.proxy_session.delete
-        else:
-            self.log("[CONFIG] proxy: ❌ Disabled", Fore.RED)
-            # Restore original functions if proxy is disabled
-            requests.get = self._original_requests["get"]
-            requests.post = self._original_requests["post"]
-            requests.put = self._original_requests["put"]
-            requests.delete = self._original_requests["delete"]
+        proxies = self.load_proxies()
+        if self.config.get("proxy", False) and proxies:
+            if len(proxies) < len(self.query_list):
+                self.log(f"⚠️ Warning: Not enough proxies ({len(proxies)}) for all accounts ({len(self.query_list)})", Fore.YELLOW)
+                self.log("⚠️ Some accounts will use a direct connection.", Fore.YELLOW)
+            elif len(proxies) > len(self.query_list):
+                self.log(f"ℹ️ More proxies ({len(proxies)}) than accounts ({len(self.query_list)}). Some proxies won't be used.", Fore.CYAN)
+            else:
+                self.log(f"✅ Perfect match: {len(proxies)} proxies for {len(self.query_list)} accounts.", Fore.GREEN)
 
 
 async def process_account(account, original_index, account_label, hip, config):
@@ -553,9 +505,27 @@ async def process_account(account, original_index, account_label, hip, config):
     display_account = account[:10] + "..." if len(account) > 10 else account
     hip.log(f"👤 Processing {account_label}: {display_account}", Fore.YELLOW)
 
-    # Override proxy if enabled
+    # Override proxy if enabled - MODIFIED TO USE MATCHING PROXY
     if config.get("proxy", False):
-        hip.override_requests()
+        # Load all proxies
+        proxies = hip.load_proxies()
+        
+        # Use the proxy that matches the index of the current query
+        if original_index < len(proxies):
+            matching_proxy = proxies[original_index]
+            hip.log(f"🛡️ Using matching proxy: {matching_proxy} for account index {original_index}", Fore.YELLOW)
+            
+            # Create a session with the matching proxy
+            proxy_session = requests.Session()
+            proxy_session.proxies = {"http": matching_proxy, "https": matching_proxy}
+            
+            # Override requests methods with the proxy session
+            requests.get = proxy_session.get
+            requests.post = proxy_session.post
+            requests.put = proxy_session.put
+            requests.delete = proxy_session.delete
+        else:
+            hip.log(f"⚠️ No matching proxy found for index {original_index}. Using direct connection.", Fore.RED)
     else:
         hip.log("[CONFIG] Proxy: ❌ Disabled", Fore.RED)
 
@@ -615,9 +585,10 @@ async def main():
         Fore.YELLOW,
     )
     hip.log(f"📂 Loaded {len(all_accounts)} accounts from query list.", Fore.YELLOW)
-
+    
+    # Validate proxy-query matching if proxy is enabled
     if config.get("proxy", False):
-        proxies = hip.load_proxies()
+        hip.validate_proxy_query_match()
 
     while True:
         # Create a new asyncio Queue and add all accounts (with their original index)
