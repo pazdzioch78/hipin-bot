@@ -3,7 +3,9 @@
     "task": true,
     "daily": true,
     "thread": 1,
-    "proxy": false,
-    "delay_account_switch": 10,
-    "delay_loop": 3000
+    "proxy": true,
+    "delay_account_switch_min": 5,
+    "delay_account_switch_max": 15,
+    "delay_loop_min": 2000,
+    "delay_loop_max": 4000
 }
