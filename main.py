@@ -550,7 +550,9 @@ async def process_account(account, original_index, account_label, hip, config):
             hip.log(f"🔄 Executing {task_name}...", Fore.CYAN)
             await asyncio.to_thread(getattr(hip, task_key))
 
-    delay_switch = config.get("delay_account_switch", 10)
+            min_delay = config.get("delay_account_switch_min", 5)
+            max_delay = config.get("delay_account_switch_max", 15)
+            delay_switch = random.randint(min_delay, max_delay)
     hip.log(
         f"➡️ Finished processing {account_label}. Waiting {Fore.WHITE}{delay_switch}{Fore.CYAN} seconds before next account.",
         Fore.CYAN,
@@ -610,7 +612,9 @@ async def main():
             w.cancel()
 
         hip.log("🔁 All accounts processed. Restarting loop.", Fore.CYAN)
-        delay_loop = config.get("delay_loop", 30)
+        min_loop_delay = config.get("delay_loop_min", 2000)
+        max_loop_delay = config.get("delay_loop_max", 4000)
+        delay_loop = random.randint(min_loop_delay, max_loop_delay)
         hip.log(
             f"⏳ Sleeping for {Fore.WHITE}{delay_loop}{Fore.CYAN} seconds before restarting.",
             Fore.CYAN,
